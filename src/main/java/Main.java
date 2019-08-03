@@ -1,6 +1,7 @@
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 import java.time.LocalDateTime;
@@ -10,10 +11,12 @@ public class Main {
 
     public static void main(String[] args) {
         while(true) {
+            long deltaT = System.currentTimeMillis();
             boolean status = checkForInternet();
-            System.out.println(status);
-            statusAppender(status);
-            waiting(1000);
+            deltaT = System.currentTimeMillis() - deltaT;
+            statusAppender(deltaT);
+            System.out.println(getCurrentDateTimeString() + " " + deltaT);
+            waiting(5000 - deltaT);
         }
     }
 
@@ -21,8 +24,8 @@ public class Main {
         try {
             URL url = new URL("http://www.google.com");
             URLConnection connection = url.openConnection();
+            connection.setConnectTimeout(4500);
             connection.connect();
-
             return true;
         }
         catch (Exception e) {
@@ -32,18 +35,16 @@ public class Main {
 
     public static void waiting(long delay) {
         try {
-            Thread.sleep(delay);
+            Thread.sleep(Math.max(delay,0));
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
     }
 
-    public static void statusAppender(boolean connectionStatus) {
-        //if(connectionStatus) return;
-        LocalDateTime myObj = LocalDateTime.now();
-        String statusString = connectionStatus == true ? "1" : "0";
+    public static void statusAppender(long ping) {
+        //String statusString = connectionStatus == true ? "1" : "0";
 
-        String textToAppend = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").format(myObj) + "," + statusString;
+        String textToAppend = getCurrentDateTimeString() + "," + ping;
         try {
             BufferedWriter writer = new BufferedWriter(
                     new FileWriter("log.txt", true)  //Set true for append mode
@@ -54,6 +55,11 @@ public class Main {
         } catch (Exception e) {
             System.out.println("Unable to write to file!");
         }
+    }
+
+    public static String getCurrentDateTimeString() {
+        LocalDateTime myObj = LocalDateTime.now();
+        return DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").format(myObj);
     }
 
 }
